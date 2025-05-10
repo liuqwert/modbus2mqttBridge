@@ -52,5 +52,3 @@ mosquitto_pub -t "modbus/PLC_MAIN/slave1/command" -m '{"address":40001, "value":
 4.实时Web监控界面
 
 5.写入后立即验证与状态更新
-
-6.完善的错误处理与日志记录
