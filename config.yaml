@@ -1,0 +1,39 @@
+mqtt:
+  broker: "localhost"
+  port: 1883
+  username: "12345"
+  passwd: "123456"
+  status_topic: "modbus/{master}/slave{slave_id}/status"
+  command_topic: "modbus/{master}/slave{slave_id}/command"
+  qos: 1
+  retain: false
+  reconnect_interval: 5
+
+
+modbus: # master
+  - name: "PLC_MAIN"
+    host: "127.0.0.1"
+    port: 502
+#    reconnect_interval: 3
+    poll_interval: 10
+    slaves:
+      - slave_id: 1
+        registers:
+          - start: 400001 # type: "4x"
+            count: 10
+          - start: 300001  # type: "3x"
+            count: 5
+          - start: 000001   # type: "0x"
+            count: 8
+
+#      - slave_id: 2
+#        registers:
+#          - start: 1   # type: "0x"
+#            count: 8
+
+
+
+web:
+  host: "0.0.0.0"
+  port: 5000
+  debug: false

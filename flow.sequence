@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant MQTT as MQTT Broker
+    participant Web as Web Interface
+    participant Bridge as Modbus Bridge
+    participant Modbus as Modbus Device
+
+    Bridge->>MQTT: 订阅command主题
+    loop 轮询周期
+        Bridge->>Modbus: 读取寄存器
+        Bridge->>MQTT: 发布status主题
+    end
+
+    Web->>Bridge: HTTP请求写入
+    Bridge->>Modbus: 写入寄存器
+    Modbus-->>Bridge: 返回结果
+    Bridge->>MQTT: 发布更新后的状态
+    Bridge-->>Web: 返回操作结果
+
+    MQTT->>Bridge: 收到command消息
+    Bridge->>Modbus: 写入寄存器
+    Modbus-->>Bridge: 返回结果
+    Bridge->>MQTT: 发布更新后的状态
