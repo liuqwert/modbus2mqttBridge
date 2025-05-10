@@ -33,12 +33,12 @@ http://localhost:5000
 
 #### 订阅状态
 ```
-mosquitto_sub -t "modbus/+/slave+/status"
+mosquitto_sub -t "modbus/telemetry/#"
 ```
 
 #### 发送控制命令
 ```
-mosquitto_pub -t "modbus/PLC_MAIN/slave1/command" -m '{"address":40001, "value":123}'
+mosquitto_pub -t "modbus/command/PLC_MAIN/1" -m '{"address":40001, "value":123}'
 ```
 
 ### 此项目完整实现了以下功能：
