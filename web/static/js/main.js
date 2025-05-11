@@ -11,6 +11,7 @@ function updateDisplay(data) {
                 <h3>Slave ${slave.id}</h3>`;
 //            console.log("slave:", slave)
             Object.entries(slave.data).forEach(([address, value]) => {
+                address = address.substring(1, 7);
                 html += `<div class="register-group">`;
                 const addressStr = address.toString().padStart(6, '0');
 

@@ -25,10 +25,11 @@ def start_web(bridge: ModbusBridge, config):
                 'slaves': []
             }
             for slave in master.slaves.values():
-                master_data['slaves'].append({
-                    'id': slave.slave_id,
-                    'data': slave.data_cache
-                })
+                for reg in slave.parsed_registers.values():
+                    master_data['slaves'].append({
+                        'id': slave.slave_id,
+                        'data': reg['data_cache']
+                    })
             status.append(master_data)
         return jsonify(status)
 

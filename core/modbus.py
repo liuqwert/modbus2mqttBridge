@@ -41,12 +41,12 @@ class ModbusSlave:
         self.slave_id = slave_config['slave_id']
         self.registers = slave_config['registers']
         self.master_name = master_name
-        self.data_cache: Dict[int, Any] = {}
 
         self.parsed_registers = {}
         for reg_conf in self.registers:
             reg = plc_to_modbus(reg_conf['start'])
-            reg['count'] = reg_conf['count']
+            reg['conf'] = reg_conf
+            reg['data_cache'] = {}
             self.parsed_registers[reg_conf['start']] = reg
 
 
@@ -93,51 +93,58 @@ class ModbusMaster:
                 if not self.client.connected:
                     self.client.connect()
 
-                data = {}
                 with self.lock:
                     for slave in self.slaves.values():
                         for reg in slave.parsed_registers.values():
-                            # key = f"{reg['plc_address']}-{reg['plc_address'] + reg['count'] -1}"
+
                             val = None
                             if reg['type'] == "4x":
                                 response = self.client.read_holding_registers(
                                     reg['address'],
-                                    count=reg['count'],
+                                    count=reg['conf']['count'],
                                     slave=slave.slave_id
                                 )
                                 val = response.registers
                             elif reg['type'] == "3x":
                                 response = self.client.read_input_registers(
                                     reg['address'],
-                                    count=reg['count'],
+                                    count=reg['conf']['count'],
                                     slave=slave.slave_id
                                 )
                                 val = response.registers
                             elif reg['type'] == "1x":
                                 response = self.client.read_discrete_inputs(
                                     reg['address'],
-                                    count=reg['count'],
+                                    count=reg['conf']['count'],
                                     slave=slave.slave_id
                                 )
-                                val = response.bits
+                                val = response.bits[:reg['conf']['count']]
                             elif reg['type'] == "0x":
                                 response = self.client.read_coils(
                                     reg['address'],
-                                    count=reg['count'],
+                                    count=reg['conf']['count'],
                                     slave=slave.slave_id
                                 )
-                                val = response.bits
+                                val = response.bits[:reg['conf']['count']]
                             if response.isError() or not val:
                                 logger.opt(exception=True).error(f"Read error: {response}")
                                 continue
 
                             time.sleep(0.5) # modbus指令之间的延时
-                            # slave.data_cache = data
-                            if reg['count'] == len(val):
-                                for i in range(reg['count']):
-                                    slave.data_cache[reg['plc_address'] + i] = val[i]
-
-                        self.mqtt_client.publish_status(self.name, slave.slave_id, slave.data_cache)
+                            if reg['conf']['count'] == len(val):
+                                for i in range(reg['conf']['count']):
+                                    cache_address = f"r{(int(reg['plc_address']) + i):0>6d}"
+                                    reg['data_cache'][cache_address] = val[i]
+                            data = {
+                                "data": list(reg['data_cache'].values()),
+                                "device":  f"{reg['conf']['name']}-{reg['conf']['gid']}",
+                            }
+                            self.mqtt_client.publish_status(
+                                self.name,
+                                slave.slave_id,
+                                data,
+                                reg['conf']
+                            )
             except ModbusException as e:
                 logger.opt(exception=True).error(f"Modbus error: {e}")
             except Exception as e:
@@ -183,11 +190,22 @@ class ModbusMaster:
                     current_value = response.bits[0] if not response.isError() else None
 
                 if current_value == value:
-                    self.mqtt_client.publish_status(
-                        self.name, slave_id,
-                        {f"{plc_address}": current_value}
-                    )
-                    self.slaves[slave_id].data_cache[plc_address] = value
+                    for reg in self.slaves[slave_id].parsed_registers.values():
+                        cache_address = f"r{plc_address:0>6d}"
+                        if cache_address in reg['data_cache']:
+                            reg['data_cache'][cache_address] = value
+
+                            data = {
+                                "data": list(reg['data_cache'].values()),
+                                "device":  f"{reg['conf']['name']}-{reg['conf']['gid']}",
+                            }
+                            self.mqtt_client.publish_status(
+                                self.name,
+                                slave_id,
+                                data,
+                                reg['conf']
+                            )
+                            break
                     return True
                 return False
         except Exception as e:

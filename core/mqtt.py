@@ -44,21 +44,17 @@ class MQTTClient:
         for master in self.bridge.masters.values():
 
             for slave in master.slaves.values():
-                topic = self.config['command_topic'].format(
-                    master=master.name,
-                    slave_id=slave.slave_id
-                )
+                topic = self.config['command_topic']
                 self.client.subscribe(topic)
                 logger.info(f"Subscribed to {topic}")
 
     def _on_message(self, client, userdata, msg):
         try:
-            topic = msg.topic
             payload = json.loads(msg.payload)
 
             # 解析主题
-            master_name = topic.split('/')[2]
-            slave_id = int(topic.split('/')[3])
+            master_name = payload['master_name']
+            slave_id = int(payload['slave_id'])
 
             # 执行写入
             success = self.bridge.write_register(
@@ -73,14 +69,29 @@ class MQTTClient:
         except Exception as e:
             logger.opt(exception=True).error(f"Error processing MQTT message: {e}")
 
-    def publish_status(self, master_name, slave_id, data):
-        topic = self.config['status_topic'].format(
-            master=master_name,
-            slave_id=slave_id
-        )
-        print("pub:", topic, data)
+    def publish_status(self, master_name, slave_id, data, reg_conf):
+        if reg_conf['topic'] == "attribute":
+            topic_addr = self.config['attribute_topic'].format(
+                device=reg_conf['device'],
+                # master=master_name,
+                # slave_id=slave_id,
+                # name=reg_conf['name'],
+                # gid=reg_conf['gid'],
+            )
+        elif reg_conf['topic'] == "telemetry":
+            topic_addr = self.config['telemetry_topic'].format(
+                device=reg_conf['device'],
+                # master=master_name,
+                # slave_id=slave_id,
+                # name=reg_conf['name'],
+                # gid=reg_conf['gid'],
+            )
+        else:
+            logger.error("unknown topic:{}", reg_conf['topic'])
+            return
+        logger.debug("pub:{} : {}", topic_addr, data)
         self.client.publish(
-            topic,
+            topic_addr,
             payload=json.dumps(data),
             qos=self.config['qos'],
             retain=self.config['retain']

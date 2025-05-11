@@ -11,10 +11,17 @@ import yaml
 
 from core.bridge import ModbusBridge
 from web.routes import start_web
+import chardet
 
+def detect_encoding(file_path):
+    with open(file_path, 'rb') as f:
+        result = chardet.detect(f.read())
+    return result['encoding']
 
 def load_config():
-    with open('config/config.yaml') as f:
+    file_path = 'config/config.yaml'
+    encoding = detect_encoding(file_path)
+    with open(file_path, encoding=encoding) as f:
         return yaml.safe_load(f)
 
 
