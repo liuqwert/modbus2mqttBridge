@@ -19,25 +19,25 @@ modbus: # master
     slaves:
       - slave_id: 1
         registers:
-          - start: 400001 # type: "4x"
+          - gid: 1401
+            start: 400001 # type: "4x"
             count: 10
-#          - start: 300001  # type: "3x"
-#            count: 5
-#      - slave_id: 2
-#        registers:
-#          - start: 1   # type: "0x"
-#            count: 8
-
-  - name: "PLC_BLE"
-    host: "127.0.0.1"
-    port: 503
-#    reconnect_interval: 3
-    poll_interval: 10
-    slaves:
-      - slave_id: 1
+            name: "name1"
+            device: "device type"
+            topic: "telemetry"
+      - slave_id: 2
         registers:
-          - start: 000001   # type: "0x"
-            count: 8
+          - gid: 1101
+            start: 000001 # type: "0x"
+            count: 5
+            name: "name2"
+            topic: "attribute"
+            device: "device type"
+
+  # - name: "PLC_BLE"
+  #   host: "127.0.0.1"
+  #   port: 503
+  #   ....
 
 web:
   host: "0.0.0.0"
