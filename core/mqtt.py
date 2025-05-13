@@ -41,12 +41,9 @@ class MQTTClient:
             logger.opt(exception=True).error(f"Connection failed with code {rc}")
 
     def _subscribe_all(self):
-        for master in self.bridge.masters.values():
-
-            for slave in master.slaves.values():
-                topic = self.config['command_topic']
-                self.client.subscribe(topic)
-                logger.info(f"Subscribed to {topic}")
+        topic = self.config['command_topic']
+        self.client.subscribe(topic)
+        logger.info(f"Subscribed to {topic}")
 
     def _on_message(self, client, userdata, msg):
         try:
