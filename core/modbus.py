@@ -137,7 +137,7 @@ class ModbusMaster:
                                     reg['data_cache'][cache_address] = val[i]
                             data = {
                                 "data": list(reg['data_cache'].values()),
-                                "device":  f"{reg['conf']['name']}-{reg['conf']['gid']}",
+                                "device":  f"{reg['conf']['gid']}-{reg['conf']['name']}",
                             }
                             self.mqtt_client.publish_status(
                                 self.name,
@@ -147,8 +147,10 @@ class ModbusMaster:
                             )
             except ModbusException as e:
                 logger.opt(exception=True).error(f"Modbus error: {e}")
+                self.client.close()
             except Exception as e:
                 logger.opt(exception=True).error(f"Unexpected error: {e}")
+                self.client.close()
 
             time.sleep(self.poll_interval)
 
@@ -197,7 +199,7 @@ class ModbusMaster:
 
                             data = {
                                 "data": list(reg['data_cache'].values()),
-                                "device":  f"{reg['conf']['name']}-{reg['conf']['gid']}",
+                                "device":  f"{reg['conf']['gid']}-{reg['conf']['name']}",
                             }
                             self.mqtt_client.publish_status(
                                 self.name,
